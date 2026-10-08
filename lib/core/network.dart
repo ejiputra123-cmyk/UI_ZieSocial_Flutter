@@ -33,4 +33,35 @@ class ApiClient {
 
       return _handleResponse(response);
     }
+
+    Future<Map<String, dynamic>> upload(
+      String url, {
+        required String filePath,
+        required String fieldName,
+        Map<String, String>? fields,
+      }) async {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse(url),
+          );
+
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              fieldName,
+              filePath,
+            ),
+          );
+
+          if (fields != null) {
+            request.fields.addAll(fields);
+          }
+
+          final streamedResponse = await request.send();
+
+          final response = await http.Response.fromStream(
+            streamedResponse,
+          );
+
+          return _handleResponse(response);
+      }
 }
