@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ziesocial/model/post_model.dart';
+import 'package:ziesocial/viewmodel/login_viewmodel.dart';
+import 'package:ziesocial/viewmodel/post_viewmodel.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -10,17 +13,63 @@ class PostCard extends StatefulWidget {
   State<PostCard> createState() => _PostCardState();
 }
 
-class _PostCardState extends State<PostCard> {
-  late bool _isLiked;
-  late int _likesCount;
-  late bool _isBookmarked;
+class _PostCardState extends State<PostCard>
+    with SingleTickerProviderStateMixin {
+  bool _showHeartAnimation = false;
+  late AnimationController _animController;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _isLiked = widget.post.isLiked;
-    _likesCount = widget.post.likesCount;
-    _isBookmarked = widget.post.isBookmarked;
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.2).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.elasticOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _onDoubleTapLike() {
+    final user = context.read<LoginViewModel>().user;
+    if (user == null) return;
+
+    // Trigger animasi love di tengah gambar
+    setState(() {
+      _showHeartAnimation = true;
+    });
+    _animController.forward(from: 0.0).then((_) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          setState(() {
+            _showHeartAnimation = false;
+          });
+        }
+      });
+    });
+
+    // Panggil API toggleLike
+    context.read<PostViewModel>().toggleLike(
+      postId: widget.post.id,
+      userId: int.parse(user.id),
+    );
+  }
+
+  void _onButtonLike() {
+    final user = context.read<LoginViewModel>().user;
+    if (user == null) return;
+
+    context.read<PostViewModel>().toggleLike(
+      postId: widget.post.id,
+      userId: int.parse(user.id),
+    );
   }
 
   @override
@@ -28,7 +77,7 @@ class _PostCardState extends State<PostCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Post Header (Avatar, Username, Location, More Icon)
+        // Post Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
@@ -50,13 +99,14 @@ class _PostCardState extends State<PostCard> {
                         color: Color(0xFF1F2937),
                       ),
                     ),
-                    Text(
-                      widget.post.location,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF6B7280),
+                    if (widget.post.location.isNotEmpty)
+                      Text(
+                        widget.post.location,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF6B7280),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -68,11 +118,39 @@ class _PostCardState extends State<PostCard> {
           ),
         ),
 
-        // Main Post Image
-        Image.network(
-          widget.post.imageUrl,
-          width: double.infinity,
-          fit: BoxFit.cover,
+        // Main Post Image dengan Fitur Double Tap
+        GestureDetector(
+          onDoubleTap: _onDoubleTapLike,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(
+                widget.post.imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 250,
+                    color: Colors.grey[200],
+                    child: const Icon(
+                      Icons.broken_image,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
+              if (_showHeartAnimation)
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: const Icon(
+                    Icons.favorite,
+                    color: Colors.white,
+                    size: 100,
+                  ),
+                ),
+            ],
+          ),
         ),
 
         // Action Bar (Like, Comment, Share, Bookmark)
@@ -85,15 +163,14 @@ class _PostCardState extends State<PostCard> {
                 children: [
                   IconButton(
                     icon: Icon(
-                      _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Colors.red : const Color(0xFF1F2937),
+                      widget.post.isLiked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: widget.post.isLiked
+                          ? Colors.red
+                          : const Color(0xFF1F2937),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _isLiked = !_isLiked;
-                        _likesCount += _isLiked ? 1 : -1;
-                      });
-                    },
+                    onPressed: _onButtonLike,
                   ),
                   IconButton(
                     icon: const Icon(
@@ -113,12 +190,14 @@ class _PostCardState extends State<PostCard> {
               ),
               IconButton(
                 icon: Icon(
-                  _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  widget.post.isBookmarked
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
                   color: const Color(0xFF1F2937),
                 ),
                 onPressed: () {
                   setState(() {
-                    _isBookmarked = !_isBookmarked;
+                    widget.post.isBookmarked = !widget.post.isBookmarked;
                   });
                 },
               ),
@@ -133,29 +212,31 @@ class _PostCardState extends State<PostCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$_likesCount likes • ${widget.post.commentsCount} comments',
+                '${widget.post.likesCount} likes • ${widget.post.commentsCount} comments',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                   color: Color(0xFF1F2937),
                 ),
               ),
-              const SizedBox(height: 4),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF1F2937),
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '${widget.post.username} ',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+              if (widget.post.caption.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1F2937),
                     ),
-                    TextSpan(text: widget.post.caption),
-                  ],
+                    children: [
+                      TextSpan(
+                        text: '${widget.post.username} ',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(text: widget.post.caption),
+                    ],
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 4),
               Text(
                 widget.post.timeAgo,

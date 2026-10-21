@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:ziesocial/model/post_model.dart';
+import 'package:ziesocial/core/constants.dart';
 import 'package:ziesocial/view/create_post_view.dart';
 import 'package:ziesocial/view/login_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
+import 'package:ziesocial/viewmodel/post_viewmodel.dart';
 import 'package:ziesocial/widget/post_card.dart';
 import 'package:ziesocial/widget/stories_section.dart';
 
@@ -16,6 +17,20 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPosts();
+    });
+  }
+
+  Future<void> _loadPosts() async {
+    final user = context.read<LoginViewModel>().user;
+    final userId = user != null ? int.tryParse(user.id) : null;
+    await context.read<PostViewModel>().fetchPosts(currentUserId: userId);
+  }
 
   void _logout(BuildContext context) {
     context.read<LoginViewModel>().logout();
@@ -30,33 +45,9 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<LoginViewModel>().user;
-    final userAvatar = user?.avatar.isNotEmpty == true
-        ? user!.avatar
-        : 'https://picsum.photos/seed/user/200';
+    final userAvatar = ApiConstants.getImageUrl(user?.avatar);
 
-    // Mock data feed postingan sesuai referensi UI
-    final List<PostModel> posts = [
-      PostModel(
-        username: 'wander.lust',
-        userAvatar: 'https://picsum.photos/seed/sarah/200',
-        location: 'Bali, Indonesia',
-        imageUrl: 'https://picsum.photos/seed/bali/600/600',
-        likesCount: 125,
-        commentsCount: 12,
-        caption: 'Exploring paradise in Bali! 🌴✨ #travel #wanderlust',
-        timeAgo: '2 HOURS AGO',
-      ),
-      PostModel(
-        username: 'art.flow',
-        userAvatar: 'https://picsum.photos/seed/art/200',
-        location: 'Paris, France',
-        imageUrl: 'https://picsum.photos/seed/paris/600/600',
-        likesCount: 342,
-        commentsCount: 28,
-        caption: 'Art is everywhere if you know where to look. 🎨',
-        timeAgo: '5 HOURS AGO',
-      ),
-    ];
+    final postViewModel = context.watch<PostViewModel>();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -86,11 +77,13 @@ class _HomeViewState extends State<HomeView> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Color(0xFF4F46E5)),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CreatePostView()),
               );
+              // Refresh feed setelah mengunggah postingan baru
+              _loadPosts();
             },
             tooltip: 'Buat postingan',
           ),
@@ -101,23 +94,61 @@ class _HomeViewState extends State<HomeView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Story Section (Horizontal Scroll)
-            const StoriesSection(),
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+      body: RefreshIndicator(
+        onRefresh: _loadPosts,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Stories Section
+              const StoriesSection(),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-            // Post Feed (Vertical Scroll)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                return PostCard(post: posts[index]);
-              },
-            ),
-          ],
+              // Feed Postingan dari Database
+              if (postViewModel.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: CircularProgressIndicator(),
+                )
+              else if (postViewModel.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 40,
+                    horizontal: 16,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        postViewModel.errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                      ElevatedButton(
+                        onPressed: _loadPosts,
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (postViewModel.posts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Text(
+                    'Belum ada postingan.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: postViewModel.posts.length,
+                  itemBuilder: (context, index) {
+                    final post = postViewModel.posts[index];
+                    return PostCard(key: ValueKey(post.id), post: post);
+                  },
+                ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
