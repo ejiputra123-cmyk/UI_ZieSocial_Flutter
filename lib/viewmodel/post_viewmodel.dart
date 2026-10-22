@@ -67,4 +67,20 @@ class PostViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  void incrementCommentCount(int postId) {
+    final postIndex = _posts.indexWhere((p) => p.id == postId);
+    if (postIndex != -1) {
+      _posts[postIndex].commentsCount += 1;
+      notifyListeners();
+    }
+  }
+
+  void decrementCommentCount(int postId) {
+    final postIndex = _posts.indexWhere((p) => p.id == postId);
+    if (postIndex != -1 && _posts[postIndex].commentsCount > 0) {
+      _posts[postIndex].commentsCount -= 1;
+      notifyListeners();
+    }
+  }
 }

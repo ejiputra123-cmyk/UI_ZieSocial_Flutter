@@ -7,7 +7,7 @@ class PostModel {
   final String location;
   final String imageUrl;
   int likesCount;
-  final int commentsCount;
+  int commentsCount;
   final String caption;
   final String timeAgo;
   bool isLiked;
@@ -40,7 +40,9 @@ class PostModel {
       commentsCount: json['comment_count'] ?? 0,
       caption: json['caption'] ?? '',
       timeAgo: _formatDate(json['create_date']),
-      isLiked: json['is_liked'] ?? false,
+      isLiked: (json['is_liked'] is bool)
+          ? json['is_liked']
+          : (json['is_liked'] == 1 || json['is_liked'] == '1'),
       isBookmarked: false,
     );
   }

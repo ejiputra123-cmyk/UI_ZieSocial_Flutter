@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/core/network.dart';
 import 'package:ziesocial/view/login_view.dart';
+import 'package:ziesocial/viewmodel/comment_viewmodel.dart';
 import 'package:ziesocial/viewmodel/create_post_viewmodel.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
@@ -17,6 +18,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => RegisterViewModel(apiClient)),
         ChangeNotifierProvider(create: (_) => CreatePostViewModel(apiClient)),
         ChangeNotifierProvider(create: (_) => PostViewModel(apiClient)),
+        ChangeNotifierProvider(create: (_) => CommentViewModel(apiClient)),
       ],
       child: const MyApp(),
     ),

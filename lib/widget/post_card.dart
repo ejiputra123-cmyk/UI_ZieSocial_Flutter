@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ziesocial/model/post_model.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
+import 'package:ziesocial/widget/comment_bottom_sheet.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -55,11 +56,14 @@ class _PostCardState extends State<PostCard>
       });
     });
 
-    // Panggil API toggleLike
-    context.read<PostViewModel>().toggleLike(
-      postId: widget.post.id,
-      userId: int.parse(user.id),
-    );
+    // Jika belum di-like, panggil toggleLike untuk like postingan.
+    // Jika SUDAH di-like, double tap TIDAK akan me-unlike (hanya bisa unlike lewat tombol like).
+    if (!widget.post.isLiked) {
+      context.read<PostViewModel>().toggleLike(
+        postId: widget.post.id,
+        userId: int.parse(user.id),
+      );
+    }
   }
 
   void _onButtonLike() {
@@ -70,6 +74,10 @@ class _PostCardState extends State<PostCard>
       postId: widget.post.id,
       userId: int.parse(user.id),
     );
+  }
+
+  void _openComments() {
+    CommentBottomSheet.show(context, widget.post);
   }
 
   @override
@@ -177,7 +185,7 @@ class _PostCardState extends State<PostCard>
                       Icons.chat_bubble_outline,
                       color: Color(0xFF1F2937),
                     ),
-                    onPressed: () {},
+                    onPressed: _openComments,
                   ),
                   IconButton(
                     icon: const Icon(
@@ -211,12 +219,15 @@ class _PostCardState extends State<PostCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${widget.post.likesCount} likes • ${widget.post.commentsCount} comments',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Color(0xFF1F2937),
+              GestureDetector(
+                onTap: _openComments,
+                child: Text(
+                  '${widget.post.likesCount} likes • ${widget.post.commentsCount} comments',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF1F2937),
+                  ),
                 ),
               ),
               if (widget.post.caption.isNotEmpty) ...[

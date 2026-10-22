@@ -10,6 +10,10 @@ class ApiConstants {
   static String get createPost => '$apiBaseUrl/posts/create.php';
   static String get readPosts => '$apiBaseUrl/posts/read.php';
   static String get toggleLike => '$apiBaseUrl/likes/toggle.php';
+  static String get readComments => '$apiBaseUrl/comments/read.php';
+  static String get createComment => '$apiBaseUrl/comments/create.php';
+  static String get updateComment => '$apiBaseUrl/comments/update.php';
+  static String get deleteComment => '$apiBaseUrl/comments/delete.php';
 
   // Helper untuk mendapatkan full URL dari path gambar di server
   static String getImageUrl(String? relativePath) {
