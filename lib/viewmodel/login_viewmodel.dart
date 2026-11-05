@@ -38,6 +38,12 @@ class LoginViewModel extends ChangeNotifier {
     }
   }
 
+  // Sinkronisasi data user setelah edit profile
+  void updateUser(UserModel updatedUser) {
+    _user = updatedUser;
+    notifyListeners();
+  }
+
   void logout() {
     _user = null;
     notifyListeners();

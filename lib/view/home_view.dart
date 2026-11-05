@@ -1,10 +1,13 @@
+// ziesocial/flutter/ziesocial/lib/view/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/core/constants.dart';
 import 'package:ziesocial/view/create_post_view.dart';
 import 'package:ziesocial/view/login_view.dart';
+import 'package:ziesocial/view/profile_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
+import 'package:ziesocial/viewmodel/profile_viewmodel.dart';
 import 'package:ziesocial/widget/post_card.dart';
 import 'package:ziesocial/widget/stories_section.dart';
 
@@ -30,6 +33,9 @@ class _HomeViewState extends State<HomeView> {
     final user = context.read<LoginViewModel>().user;
     final userId = user != null ? int.tryParse(user.id) : null;
     await context.read<PostViewModel>().fetchPosts(currentUserId: userId);
+    if (userId != null && mounted) {
+      await context.read<ProfileViewModel>().fetchProfile(userId);
+    }
   }
 
   void _logout(BuildContext context) {
@@ -42,11 +48,67 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  Widget _buildHomeFeed(PostViewModel postViewModel) {
+    return RefreshIndicator(
+      onRefresh: _loadPosts,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            const StoriesSection(),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            if (postViewModel.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: CircularProgressIndicator(),
+              )
+            else if (postViewModel.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 40,
+                  horizontal: 16,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      postViewModel.errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    ElevatedButton(
+                      onPressed: _loadPosts,
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              )
+            else if (postViewModel.posts.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Text(
+                  'Belum ada postingan.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: postViewModel.posts.length,
+                itemBuilder: (context, index) {
+                  final post = postViewModel.posts[index];
+                  return PostCard(key: ValueKey(post.id), post: post);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<LoginViewModel>().user;
     final userAvatar = ApiConstants.getImageUrl(user?.avatar);
-
     final postViewModel = context.watch<PostViewModel>();
 
     return Scaffold(
@@ -54,13 +116,20 @@ class _HomeViewState extends State<HomeView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(backgroundImage: NetworkImage(userAvatar)),
+        leading: GestureDetector(
+          onTap: () {
+            setState(() {
+              _currentIndex = 1; // Beralih ke tab Profile
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CircleAvatar(backgroundImage: NetworkImage(userAvatar)),
+          ),
         ),
-        title: const Text(
-          'ZieSocial',
-          style: TextStyle(
+        title: Text(
+          _currentIndex == 1 ? (user?.username ?? 'Profile') : 'ZieSocial',
+          style: const TextStyle(
             color: Color(0xFF4F46E5),
             fontWeight: FontWeight.bold,
             fontSize: 22,
@@ -82,7 +151,6 @@ class _HomeViewState extends State<HomeView> {
                 context,
                 MaterialPageRoute(builder: (context) => const CreatePostView()),
               );
-              // Refresh feed setelah mengunggah postingan baru
               _loadPosts();
             },
             tooltip: 'Buat postingan',
@@ -94,62 +162,9 @@ class _HomeViewState extends State<HomeView> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadPosts,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              // Stories Section
-              const StoriesSection(),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-
-              // Feed Postingan dari Database
-              if (postViewModel.isLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: CircularProgressIndicator(),
-                )
-              else if (postViewModel.errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 40,
-                    horizontal: 16,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        postViewModel.errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                      ElevatedButton(
-                        onPressed: _loadPosts,
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
-                  ),
-                )
-              else if (postViewModel.posts.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Text(
-                    'Belum ada postingan.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: postViewModel.posts.length,
-                  itemBuilder: (context, index) {
-                    final post = postViewModel.posts[index];
-                    return PostCard(key: ValueKey(post.id), post: post);
-                  },
-                ),
-            ],
-          ),
-        ),
+      body: IndexedStack(
+        index: _currentIndex == 1 ? 1 : 0,
+        children: [_buildHomeFeed(postViewModel), const ProfileView()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

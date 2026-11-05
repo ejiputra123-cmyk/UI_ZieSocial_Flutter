@@ -6,6 +6,7 @@ import 'package:ziesocial/viewmodel/comment_viewmodel.dart';
 import 'package:ziesocial/viewmodel/create_post_viewmodel.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
+import 'package:ziesocial/viewmodel/profile_viewmodel.dart';
 import 'package:ziesocial/viewmodel/register_viewmodel.dart';
 
 void main() {
@@ -19,6 +20,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => CreatePostViewModel(apiClient)),
         ChangeNotifierProvider(create: (_) => PostViewModel(apiClient)),
         ChangeNotifierProvider(create: (_) => CommentViewModel(apiClient)),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel(apiClient)),
       ],
       child: const MyApp(),
     ),

@@ -16,6 +16,10 @@ class ApiConstants {
   static String get updateComment => '$apiBaseUrl/comments/update.php';
   static String get deleteComment => '$apiBaseUrl/comments/delete.php';
 
+  // Endpoint Profile
+  static String get readProfile => '$apiBaseUrl/profile/read.php';
+  static String get updateProfile => '$apiBaseUrl/profile/profile.php';
+
   // Helper untuk mendapatkan full URL dari path gambar di server
   static String getImageUrl(String? relativePath) {
     if (relativePath == null || relativePath.isEmpty) {
