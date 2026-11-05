@@ -1,3 +1,4 @@
+// ziesocial/flutter/ziesocial/lib/viewmodel/post_viewmodel.dart
 import 'package:flutter/material.dart';
 import 'package:ziesocial/core/constants.dart';
 import 'package:ziesocial/core/network.dart';
@@ -10,10 +11,12 @@ class PostViewModel extends ChangeNotifier {
 
   List<PostModel> _posts = [];
   bool _isLoading = false;
+  bool _isSubmitting = false; // TAMBAHAN: status mengedit/mengirim
   String? _errorMessage;
 
   List<PostModel> get posts => _posts;
   bool get isLoading => _isLoading;
+  bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
 
   // Memuat postingan dari server
@@ -36,6 +39,52 @@ class PostViewModel extends ChangeNotifier {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // TAMBAHAN: Fitur Edit Postingan Sendiri
+  Future<bool> updatePost({
+    required int postId,
+    required int userId,
+    required String caption,
+    String? newImagePath,
+  }) async {
+    _isSubmitting = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.uploadOptional(
+        ApiConstants.updatePost,
+        filePath: newImagePath,
+        fieldName: 'image',
+        fields: {
+          'id': postId.toString(),
+          'user_id': userId.toString(),
+          'caption': caption,
+        },
+      );
+
+      final updatedPostData = response['post'];
+      if (updatedPostData != null) {
+        final index = _posts.indexWhere((p) => p.id == postId);
+        if (index != -1) {
+          _posts[index].caption = caption;
+          if (updatedPostData['image'] != null &&
+              updatedPostData['image'].toString().isNotEmpty) {
+            _posts[index].imageUrl = ApiConstants.getImageUrl(
+              updatedPostData['image'],
+            );
+          }
+        }
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isSubmitting = false;
       notifyListeners();
     }
   }

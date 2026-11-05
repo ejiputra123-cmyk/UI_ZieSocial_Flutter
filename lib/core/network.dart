@@ -58,4 +58,27 @@ class ApiClient {
 
     return _handleResponse(response);
   }
+
+  // tambahan: upload multipart dengan gambar opsional (bisa tanpa ganti gambar)
+  Future<Map<String, dynamic>> uploadOptional(
+    String url, {
+    String? filePath,
+    String? fieldName,
+    Map<String, String>? fields,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse(url));
+
+    if (filePath != null && fieldName != null && filePath.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+    }
+
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    return _handleResponse(response);
+  }
 }

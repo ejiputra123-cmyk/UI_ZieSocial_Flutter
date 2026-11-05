@@ -1,20 +1,23 @@
+// ziesocial/flutter/ziesocial/lib/model/post_model.dart
 import 'package:ziesocial/core/constants.dart';
 
 class PostModel {
   final int id;
+  final int userId; // TAMBAHAN: simpan ID pemilik postingan
   final String username;
   final String userAvatar;
   final String location;
-  final String imageUrl;
+  String imageUrl; // diubah ke non-final agar bisa di-update
   int likesCount;
   int commentsCount;
-  final String caption;
+  String caption; // diubah ke non-final agar bisa di-update
   final String timeAgo;
   bool isLiked;
   bool isBookmarked;
 
   PostModel({
     required this.id,
+    required this.userId,
     required this.username,
     required this.userAvatar,
     required this.location,
@@ -29,9 +32,17 @@ class PostModel {
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     final author = json['author'] ?? {};
+    final authorId = author['id'] is int
+        ? author['id']
+        : int.tryParse(author['id']?.toString() ?? '0') ?? 0;
 
     return PostModel(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      userId: json['user_id'] != null
+          ? (json['user_id'] is int
+                ? json['user_id']
+                : int.parse(json['user_id'].toString()))
+          : authorId,
       username: author['username'] ?? 'User',
       userAvatar: ApiConstants.getImageUrl(author['avatar']),
       location: author['name'] ?? '',

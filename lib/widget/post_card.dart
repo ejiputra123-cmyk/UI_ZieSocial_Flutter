@@ -1,6 +1,8 @@
+// ziesocial/flutter/ziesocial/lib/widget/post_card.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/model/post_model.dart';
+import 'package:ziesocial/view/edit_post_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
 import 'package:ziesocial/widget/comment_bottom_sheet.dart';
@@ -42,7 +44,6 @@ class _PostCardState extends State<PostCard>
     final user = context.read<LoginViewModel>().user;
     if (user == null) return;
 
-    // Trigger animasi love di tengah gambar
     setState(() {
       _showHeartAnimation = true;
     });
@@ -56,8 +57,6 @@ class _PostCardState extends State<PostCard>
       });
     });
 
-    // Jika belum di-like, panggil toggleLike untuk like postingan.
-    // Jika SUDAH di-like, double tap TIDAK akan me-unlike (hanya bisa unlike lewat tombol like).
     if (!widget.post.isLiked) {
       context.read<PostViewModel>().toggleLike(
         postId: widget.post.id,
@@ -82,6 +81,13 @@ class _PostCardState extends State<PostCard>
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.watch<LoginViewModel>().user;
+    final currentUserId = currentUser != null
+        ? int.tryParse(currentUser.id)
+        : null;
+    final isOwner =
+        currentUserId != null && widget.post.userId == currentUserId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -118,15 +124,53 @@ class _PostCardState extends State<PostCard>
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.more_horiz, color: Color(0xFF1F2937)),
-                onPressed: () {},
-              ),
+              // Menu Popup: Tampilkan 'Edit' HANYA untuk pemilik postingan
+              if (isOwner)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Color(0xFF1F2937)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditPostView(post: widget.post),
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF374151),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Edit Postingan',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.more_horiz, color: Color(0xFF1F2937)),
+                  onPressed: () {},
+                ),
             ],
           ),
         ),
 
-        // Main Post Image dengan Fitur Double Tap
+        // Main Post Image
         GestureDetector(
           onDoubleTap: _onDoubleTapLike,
           child: Stack(
