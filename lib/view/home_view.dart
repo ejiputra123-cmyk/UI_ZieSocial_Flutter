@@ -5,6 +5,7 @@ import 'package:ziesocial/core/constants.dart';
 import 'package:ziesocial/view/create_post_view.dart';
 import 'package:ziesocial/view/login_view.dart';
 import 'package:ziesocial/view/profile_view.dart';
+import 'package:ziesocial/view/search_users_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
 import 'package:ziesocial/viewmodel/profile_viewmodel.dart';
@@ -111,6 +112,13 @@ class _HomeViewState extends State<HomeView> {
     final userAvatar = ApiConstants.getImageUrl(user?.avatar);
     final postViewModel = context.watch<PostViewModel>();
 
+    String appBarTitle = 'ZieSocial';
+    if (_currentIndex == 1) {
+      appBarTitle = user?.username ?? 'Profile';
+    } else if (_currentIndex == 2) {
+      appBarTitle = 'Cari Akun';
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -119,7 +127,7 @@ class _HomeViewState extends State<HomeView> {
         leading: GestureDetector(
           onTap: () {
             setState(() {
-              _currentIndex = 1; // Beralih ke tab Profile
+              _currentIndex = 1;
             });
           },
           child: Padding(
@@ -128,7 +136,7 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
         title: Text(
-          _currentIndex == 1 ? (user?.username ?? 'Profile') : 'ZieSocial',
+          appBarTitle,
           style: const TextStyle(
             color: Color(0xFF4F46E5),
             fontWeight: FontWeight.bold,
@@ -163,8 +171,12 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       body: IndexedStack(
-        index: _currentIndex == 1 ? 1 : 0,
-        children: [_buildHomeFeed(postViewModel), const ProfileView()],
+        index: _currentIndex,
+        children: [
+          _buildHomeFeed(postViewModel),
+          const ProfileView(),
+          const SearchUsersView(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

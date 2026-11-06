@@ -1,3 +1,4 @@
+// ziesocial/flutter/ziesocial/lib/core/constants.dart
 class ApiConstants {
   static String get baseUrl {
     return "https://giver-suds-identity.ngrok-free.dev/ziesocial";
@@ -6,9 +7,9 @@ class ApiConstants {
   static String get apiBaseUrl => '$baseUrl/api';
 
   static String get login => '$apiBaseUrl/auth/login.php';
-  static String get register => '$apiBaseUrl/register.php';
+  static String get register => '$apiBaseUrl/auth/register.php';
   static String get createPost => '$apiBaseUrl/posts/create.php';
-  static String get updatePost => '$apiBaseUrl/posts/update.php'; // Edit Post Endpoint
+  static String get updatePost => '$apiBaseUrl/posts/update.php';
   static String get readPosts => '$apiBaseUrl/posts/read.php';
   static String get toggleLike => '$apiBaseUrl/likes/toggle.php';
   static String get readComments => '$apiBaseUrl/comments/read.php';
@@ -16,11 +17,12 @@ class ApiConstants {
   static String get updateComment => '$apiBaseUrl/comments/update.php';
   static String get deleteComment => '$apiBaseUrl/comments/delete.php';
 
-  // Endpoint Profile
+  // Endpoint Profile & Follow
   static String get readProfile => '$apiBaseUrl/profile/read.php';
-  static String get updateProfile => '$apiBaseUrl/profile/profile.php';
+  static String get updateProfile => '$apiBaseUrl/profile/update.php';
+  static String get toggleFollow => '$apiBaseUrl/follows/toggle.php';
+  static String get readUsers => '$apiBaseUrl/users/read.php';
 
-  // Helper untuk mendapatkan full URL dari path gambar di server
   static String getImageUrl(String? relativePath) {
     if (relativePath == null || relativePath.isEmpty) {
       return 'https://picsum.photos/seed/placeholder/600/600';

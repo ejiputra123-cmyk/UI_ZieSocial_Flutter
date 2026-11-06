@@ -3,17 +3,18 @@ import 'package:ziesocial/core/constants.dart';
 
 class PostModel {
   final int id;
-  final int userId; // TAMBAHAN: simpan ID pemilik postingan
+  final int userId;
   final String username;
   final String userAvatar;
   final String location;
-  String imageUrl; // diubah ke non-final agar bisa di-update
+  String imageUrl;
   int likesCount;
   int commentsCount;
-  String caption; // diubah ke non-final agar bisa di-update
+  String caption;
   final String timeAgo;
   bool isLiked;
   bool isBookmarked;
+  bool isAuthorFollowed;
 
   PostModel({
     required this.id,
@@ -28,6 +29,7 @@ class PostModel {
     required this.timeAgo,
     this.isLiked = false,
     this.isBookmarked = false,
+    this.isAuthorFollowed = false,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,9 @@ class PostModel {
           ? json['is_liked']
           : (json['is_liked'] == 1 || json['is_liked'] == '1'),
       isBookmarked: false,
+      isAuthorFollowed: (author['is_followed'] is bool)
+          ? author['is_followed'] as bool
+          : (author['is_followed'] == 1 || author['is_followed'] == '1'),
     );
   }
 

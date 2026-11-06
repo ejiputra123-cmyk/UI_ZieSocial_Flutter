@@ -11,7 +11,7 @@ class PostViewModel extends ChangeNotifier {
 
   List<PostModel> _posts = [];
   bool _isLoading = false;
-  bool _isSubmitting = false; // TAMBAHAN: status mengedit/mengirim
+  bool _isSubmitting = false;
   String? _errorMessage;
 
   List<PostModel> get posts => _posts;
@@ -19,7 +19,6 @@ class PostViewModel extends ChangeNotifier {
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
 
-  // Memuat postingan dari server
   Future<void> fetchPosts({int? currentUserId}) async {
     _isLoading = true;
     _errorMessage = null;
@@ -43,7 +42,6 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // TAMBAHAN: Fitur Edit Postingan Sendiri
   Future<bool> updatePost({
     required int postId,
     required int userId,
@@ -89,8 +87,8 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
-  // Toggle like ke API
-  Future<bool> toggleLike({required int postId, required int userId}) async {
+  // Mengembalikan status 'liked' atau 'unliked' agar bisa disinkronkan ke ProfileViewModel
+  Future<String?> toggleLike({required int postId, required int userId}) async {
     try {
       final response = await _apiClient.post(
         ApiConstants.toggleLike,
@@ -101,19 +99,35 @@ class PostViewModel extends ChangeNotifier {
       final postIndex = _posts.indexWhere((p) => p.id == postId);
 
       if (postIndex != -1) {
-        if (status == 'liked') {
+        if (status == 'liked' && !_posts[postIndex].isLiked) {
           _posts[postIndex].isLiked = true;
           _posts[postIndex].likesCount += 1;
-        } else if (status == 'unliked') {
+        } else if (status == 'unliked' && _posts[postIndex].isLiked) {
           _posts[postIndex].isLiked = false;
-          _posts[postIndex].likesCount -= 1;
+          if (_posts[postIndex].likesCount > 0) {
+            _posts[postIndex].likesCount -= 1;
+          }
         }
         notifyListeners();
       }
 
-      return true;
+      return status.isNotEmpty ? status : null;
     } catch (e) {
-      return false;
+      return null;
+    }
+  }
+
+  // Sinkronisasi status follow penulis di seluruh daftar postingan
+  void syncFollowStatus(int targetUserId, bool isFollowed) {
+    bool changed = false;
+    for (final post in _posts) {
+      if (post.userId == targetUserId) {
+        post.isAuthorFollowed = isFollowed;
+        changed = true;
+      }
+    }
+    if (changed) {
+      notifyListeners();
     }
   }
 

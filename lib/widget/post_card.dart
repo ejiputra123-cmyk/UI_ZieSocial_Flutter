@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/model/post_model.dart';
 import 'package:ziesocial/view/edit_post_view.dart';
+import 'package:ziesocial/view/profile_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
+import 'package:ziesocial/viewmodel/profile_viewmodel.dart';
 import 'package:ziesocial/widget/comment_bottom_sheet.dart';
 
 class PostCard extends StatefulWidget {
@@ -19,6 +21,8 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard>
     with SingleTickerProviderStateMixin {
   bool _showHeartAnimation = false;
+  bool _isFollowBusy = false;
+  bool _isLikeBusy = false;
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
@@ -40,7 +44,42 @@ class _PostCardState extends State<PostCard>
     super.dispose();
   }
 
-  void _onDoubleTapLike() {
+  Future<void> _executeToggleLike() async {
+    if (_isLikeBusy) return;
+    final user = context.read<LoginViewModel>().user;
+    if (user == null) return;
+
+    setState(() => _isLikeBusy = true);
+
+    final status = await context.read<PostViewModel>().toggleLike(
+      postId: widget.post.id,
+      userId: int.parse(user.id),
+    );
+
+    if (!mounted) return;
+
+    if (status != null) {
+      // Sinkronkan ke daftar postingan di ProfileViewModel
+      context.read<ProfileViewModel>().syncLikeStatus(widget.post.id, status);
+
+      // Pastikan objek widget.post saat ini juga ter-update jika belum berubah
+      setState(() {
+        if (status == 'liked' && !widget.post.isLiked) {
+          widget.post.isLiked = true;
+          widget.post.likesCount += 1;
+        } else if (status == 'unliked' && widget.post.isLiked) {
+          widget.post.isLiked = false;
+          if (widget.post.likesCount > 0) {
+            widget.post.likesCount -= 1;
+          }
+        }
+      });
+    }
+
+    setState(() => _isLikeBusy = false);
+  }
+
+  Future<void> _onDoubleTapLike() async {
     final user = context.read<LoginViewModel>().user;
     if (user == null) return;
 
@@ -58,20 +97,45 @@ class _PostCardState extends State<PostCard>
     });
 
     if (!widget.post.isLiked) {
-      context.read<PostViewModel>().toggleLike(
-        postId: widget.post.id,
-        userId: int.parse(user.id),
-      );
+      await _executeToggleLike();
     }
   }
 
-  void _onButtonLike() {
+  Future<void> _onButtonLike() async {
+    await _executeToggleLike();
+  }
+
+  Future<void> _onToggleFollowAuthor() async {
+    if (_isFollowBusy) return;
     final user = context.read<LoginViewModel>().user;
     if (user == null) return;
+    final myId = int.tryParse(user.id);
+    if (myId == null || myId == widget.post.userId) return;
 
-    context.read<PostViewModel>().toggleLike(
-      postId: widget.post.id,
-      userId: int.parse(user.id),
+    setState(() => _isFollowBusy = true);
+
+    final newStatus = await context.read<ProfileViewModel>().toggleFollow(
+      followerId: myId,
+      followingId: widget.post.userId,
+    );
+
+    if (mounted) {
+      setState(() => _isFollowBusy = false);
+      if (newStatus != null) {
+        context.read<PostViewModel>().syncFollowStatus(
+          widget.post.userId,
+          newStatus,
+        );
+      }
+    }
+  }
+
+  void _openUserProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileView(userId: widget.post.userId),
+      ),
     );
   }
 
@@ -96,34 +160,70 @@ class _PostCardState extends State<PostCard>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage(widget.post.userAvatar),
+              GestureDetector(
+                onTap: _openUserProfile,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundImage: NetworkImage(widget.post.userAvatar),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.post.username,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Color(0xFF1F2937),
-                      ),
-                    ),
-                    if (widget.post.location.isNotEmpty)
+                child: GestureDetector(
+                  onTap: _openUserProfile,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        widget.post.location,
+                        widget.post.username,
                         style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF1F2937),
                         ),
                       ),
-                  ],
+                      if (widget.post.location.isNotEmpty)
+                        Text(
+                          widget.post.location,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
+
+              // Tombol Follow HANYA tampil jika bukan milik sendiri DAN belum di-follow
+              if (!isOwner &&
+                  currentUserId != null &&
+                  !widget.post.isAuthorFollowed)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: SizedBox(
+                    height: 30,
+                    child: TextButton(
+                      onPressed: _isFollowBusy ? null : _onToggleFollowAuthor,
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFEEF2FF),
+                        foregroundColor: const Color(0xFF4F46E5),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Follow',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               // Menu Popup: Tampilkan 'Edit' HANYA untuk pemilik postingan
               if (isOwner)
                 PopupMenuButton<String>(
@@ -160,11 +260,6 @@ class _PostCardState extends State<PostCard>
                       ),
                     ),
                   ],
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.more_horiz, color: Color(0xFF1F2937)),
-                  onPressed: () {},
                 ),
             ],
           ),
