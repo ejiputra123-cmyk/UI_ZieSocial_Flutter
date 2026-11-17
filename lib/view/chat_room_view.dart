@@ -1,4 +1,5 @@
 // ziesocial/flutter/ziesocial/lib/view/chat_room_view.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
@@ -25,29 +26,59 @@ class _ChatRoomViewState extends State<ChatRoomView> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   int? currentUserId;
+  ChatViewModel? _chatViewModel;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final user = context.read<LoginViewModel>().user;
       if (user != null) {
-        currentUserId = int.tryParse(user.id);
-        if (currentUserId != null) {
+        final parsedId = int.tryParse(user.id);
+        setState(() {
+          currentUserId = parsedId;
+        });
+        if (parsedId != null) {
           final vm = context.read<ChatViewModel>();
+          vm.setActiveRoom(widget.targetUserId);
+          vm.initPusher(parsedId);
           vm.fetchRoomMessages(
-            senderId: currentUserId!,
+            senderId: parsedId,
             receiverId: widget.targetUserId,
           );
-          vm.startPollingRoom(currentUserId!, widget.targetUserId);
+          _startPolling(parsedId);
         }
       }
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _chatViewModel = context.read<ChatViewModel>();
+  }
+
+  void _startPolling(int uid) {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      final vm = _chatViewModel;
+      if (vm != null && !vm.isSending && !vm.isLoadingRoom) {
+        vm.fetchRoomMessages(
+          senderId: uid,
+          receiverId: widget.targetUserId,
+          isInitial: false,
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
-    context.read<ChatViewModel>().stopPolling();
+    _pollingTimer?.cancel();
+    _chatViewModel?.setActiveRoom(null);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -55,17 +86,28 @@ class _ChatRoomViewState extends State<ChatRoomView> {
 
   Future<void> _sendMessage() async {
     final text = _textController.text;
-    if (text.trim().isEmpty || currentUserId == null) return;
+    final user = context.read<LoginViewModel>().user;
+    final uid = currentUserId ?? (user != null ? int.tryParse(user.id) : null);
+    if (text.trim().isEmpty || uid == null) return;
 
     _textController.clear();
 
-    await context.read<ChatViewModel>().sendMessage(
-      senderId: currentUserId!,
+    final success = await context.read<ChatViewModel>().sendMessage(
+      senderId: uid,
       receiverId: widget.targetUserId,
       text: text,
     );
 
-    // Otomatis scroll ke bawah
+    if (!mounted) return;
+
+    if (!success) {
+      final err = context.read<ChatViewModel>().errorMessage;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err ?? 'Gagal mengirim pesan.')),
+      );
+      return;
+    }
+
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         0.0,
@@ -78,6 +120,10 @@ class _ChatRoomViewState extends State<ChatRoomView> {
   @override
   Widget build(BuildContext context) {
     final chatVM = context.watch<ChatViewModel>();
+    final loginUser = context.watch<LoginViewModel>().user;
+    final effectiveUserId =
+        currentUserId ??
+        (loginUser != null ? int.tryParse(loginUser.id) : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -110,18 +156,16 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
                     controller: _scrollController,
-                    reverse:
-                        true, // Balik urutan listview agar list dimulai dari bawah
+                    reverse: true,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 16,
                     ),
                     itemCount: chatVM.roomMessages.length,
                     itemBuilder: (context, index) {
-                      // Karena reverse = true, data dari index terbalik
                       final msgList = chatVM.roomMessages.reversed.toList();
                       final msg = msgList[index];
-                      final isMe = msg.senderId == currentUserId;
+                      final isMe = msg.senderId == effectiveUserId;
 
                       return Align(
                         alignment: isMe
@@ -149,7 +193,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                             boxShadow: [
                               if (!isMe)
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 4,
                                   offset: const Offset(0, 1),
                                 ),
@@ -175,7 +219,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                                     msg.formattedTime,
                                     style: TextStyle(
                                       color: isMe
-                                          ? Colors.white.withOpacity(0.7)
+                                          ? Colors.white.withValues(alpha: 0.7)
                                           : const Color(0xFF9CA3AF),
                                       fontSize: 10,
                                     ),
@@ -187,7 +231,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                                       size: 14,
                                       color: msg.isRead
                                           ? const Color(0xFF60A5FA)
-                                          : Colors.white.withOpacity(0.7),
+                                          : Colors.white.withValues(alpha: 0.7),
                                     ),
                                   ],
                                 ],
@@ -261,3 +305,4 @@ class _ChatRoomViewState extends State<ChatRoomView> {
     );
   }
 }
+

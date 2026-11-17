@@ -3,7 +3,21 @@ import 'package:http/http.dart' as http;
 
 class ApiClient {
   Map<String, dynamic> _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body);
+    final rawBody = response.body.trim();
+    dynamic data;
+
+    try {
+      data = jsonDecode(rawBody);
+    } on FormatException {
+      // Jika output server memiliki HTML warning/notice sebelum JSON (misal "<br />...{...}")
+      final startIndex = rawBody.indexOf('{');
+      final endIndex = rawBody.lastIndexOf('}');
+      if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+        data = jsonDecode(rawBody.substring(startIndex, endIndex + 1));
+      } else {
+        throw Exception('Respons server tidak valid.');
+      }
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return Map<String, dynamic>.from(data);

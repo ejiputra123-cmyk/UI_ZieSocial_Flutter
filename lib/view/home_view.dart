@@ -7,6 +7,7 @@ import 'package:ziesocial/view/inbox_view.dart';
 import 'package:ziesocial/view/login_view.dart';
 import 'package:ziesocial/view/profile_view.dart';
 import 'package:ziesocial/view/search_users_view.dart';
+import 'package:ziesocial/viewmodel/chat_viewmodel.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
 import 'package:ziesocial/viewmodel/profile_viewmodel.dart';
@@ -61,6 +62,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _logout(BuildContext context) {
+    context.read<ChatViewModel>().disconnectPusher();
     context.read<LoginViewModel>().logout();
 
     Navigator.pushAndRemoveUntil(
