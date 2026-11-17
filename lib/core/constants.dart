@@ -23,6 +23,11 @@ class ApiConstants {
   static String get toggleFollow => '$apiBaseUrl/follows/toggle.php';
   static String get readUsers => '$apiBaseUrl/users/read.php';
 
+  // Endpoint Message / Chat
+  static String get readInbox => '$apiBaseUrl/messages/inbox.php';
+  static String get readMessages => '$apiBaseUrl/messages/read.php';
+  static String get createMessage => '$apiBaseUrl/messages/create.php';
+
   static String getImageUrl(String? relativePath) {
     if (relativePath == null || relativePath.isEmpty) {
       return 'https://picsum.photos/seed/placeholder/600/600';

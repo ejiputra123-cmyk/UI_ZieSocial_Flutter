@@ -26,6 +26,14 @@ class _PostCardState extends State<PostCard>
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
+  // Design tokens sesuai konfigurasi Tailwind pada HTML
+  static const Color _onSurface = Color(0xFF1C1B1B);
+  static const Color _secondary = Color(0xFF5E5D6C);
+  static const Color _primary = Color(0xFF4D3BCE);
+  static const Color _error = Color(0xFFBA1A1A);
+  static const Color _surfaceContainer = Color(0xFFF0EDED);
+  static const Color _surfaceContainerLowest = Color(0xFFFFFFFF);
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +52,18 @@ class _PostCardState extends State<PostCard>
     super.dispose();
   }
 
+  String _formatCount(int count) {
+    final str = count.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(str[i]);
+    }
+    return buffer.toString();
+  }
+
   Future<void> _executeToggleLike() async {
     if (_isLikeBusy) return;
     final user = context.read<LoginViewModel>().user;
@@ -59,10 +79,8 @@ class _PostCardState extends State<PostCard>
     if (!mounted) return;
 
     if (status != null) {
-      // Sinkronkan ke daftar postingan di ProfileViewModel
       context.read<ProfileViewModel>().syncLikeStatus(widget.post.id, status);
 
-      // Pastikan objek widget.post saat ini juga ter-update jika belum berubah
       setState(() {
         if (status == 'liked' && !widget.post.isLiked) {
           widget.post.isLiked = true;
@@ -152,256 +170,376 @@ class _PostCardState extends State<PostCard>
     final isOwner =
         currentUserId != null && widget.post.userId == currentUserId;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Post Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: _openUserProfile,
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundImage: NetworkImage(widget.post.userAvatar),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
+    return Container(
+      decoration: BoxDecoration(
+        color: _surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Post Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                GestureDetector(
                   onTap: _openUserProfile,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.post.username,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                      if (widget.post.location.isNotEmpty)
-                        Text(
-                          widget.post.location,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Tombol Follow HANYA tampil jika bukan milik sendiri DAN belum di-follow
-              if (!isOwner &&
-                  currentUserId != null &&
-                  !widget.post.isAuthorFollowed)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: SizedBox(
-                    height: 30,
-                    child: TextButton(
-                      onPressed: _isFollowBusy ? null : _onToggleFollowAuthor,
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFFEEF2FF),
-                        foregroundColor: const Color(0xFF4F46E5),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Follow',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: _surfaceContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.network(
+                      widget.post.userAvatar,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        size: 20,
+                        color: _secondary,
                       ),
                     ),
                   ),
                 ),
-
-              // Menu Popup: Tampilkan 'Edit' HANYA untuk pemilik postingan
-              if (isOwner)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF1F2937)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditPostView(post: widget.post),
-                        ),
-                      );
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 20,
-                            color: Color(0xFF374151),
+                          Flexible(
+                            child: GestureDetector(
+                              onTap: _openUserProfile,
+                              child: Text(
+                                widget.post.username,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 20 / 15,
+                                  letterSpacing: -0.15,
+                                  fontWeight: FontWeight.w600,
+                                  color: _onSurface,
+                                ),
+                              ),
+                            ),
                           ),
-                          SizedBox(width: 10),
-                          Text(
-                            'Edit Postingan',
-                            style: TextStyle(fontSize: 14),
-                          ),
+                          if (!isOwner && currentUserId != null) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: _secondary.withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: _isFollowBusy
+                                  ? null
+                                  : _onToggleFollowAuthor,
+                              behavior: HitTestBehavior.opaque,
+                              child: Text(
+                                widget.post.isAuthorFollowed
+                                    ? 'Following'
+                                    : 'Follow',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 14 / 11,
+                                  letterSpacing: 0.22,
+                                  fontWeight: FontWeight.w500,
+                                  color: widget.post.isAuthorFollowed
+                                      ? _secondary
+                                      : _primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
+                      ),
+                      if (widget.post.location.isNotEmpty) ...[
+                        const SizedBox(height: 1),
+                        GestureDetector(
+                          onTap: _openUserProfile,
+                          child: Text(
+                            widget.post.location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              height: 14 / 11,
+                              letterSpacing: 0.22,
+                              fontWeight: FontWeight.w400,
+                              color: _secondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isOwner)
+                  SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.more_horiz,
+                        size: 20,
+                        color: _secondary,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditPostView(post: widget.post),
+                            ),
+                          );
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: _onSurface,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Edit Postingan',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: Icon(
+                      Icons.more_horiz,
+                      size: 20,
+                      color: _secondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Main Photo Media
+          GestureDetector(
+            onDoubleTap: _onDoubleTapLike,
+            child: AspectRatio(
+              aspectRatio: 4 / 5,
+              child: Container(
+                color: _surfaceContainer,
+                child: Stack(
+                  alignment: Alignment.center,
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      widget.post.imageUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: _surfaceContainer,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.broken_image_outlined,
+                            size: 48,
+                            color: _secondary,
+                          ),
+                        );
+                      },
+                    ),
+                    if (_showHeartAnimation)
+                      Center(
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: const Icon(
+                            Icons.favorite,
+                            color: Colors.white,
+                            size: 100,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Post Actions & Micro-interactions
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        // Like Button
+                        GestureDetector(
+                          onTap: _onButtonLike,
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(
+                            widget.post.isLiked
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            size: 24,
+                            color: widget.post.isLiked ? _error : _onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Comment Button
+                        GestureDetector(
+                          onTap: _openComments,
+                          behavior: HitTestBehavior.opaque,
+                          child: const Icon(
+                            Icons.chat_bubble_outline,
+                            size: 24,
+                            color: _onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Share / Send Button
+                        GestureDetector(
+                          onTap: () {},
+                          behavior: HitTestBehavior.opaque,
+                          child: const Icon(
+                            Icons.send_outlined,
+                            size: 24,
+                            color: _onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Bookmark Button
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          widget.post.isBookmarked = !widget.post.isBookmarked;
+                        });
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Icon(
+                        widget.post.isBookmarked
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
+                        size: 24,
+                        color: widget.post.isBookmarked ? _primary : _onSurface,
                       ),
                     ),
                   ],
                 ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 10),
 
-        // Main Post Image
-        GestureDetector(
-          onDoubleTap: _onDoubleTapLike,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.network(
-                widget.post.imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 250,
-                    color: Colors.grey[200],
-                    child: const Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: Colors.grey,
+                // Like Count
+                GestureDetector(
+                  onTap: _openComments,
+                  child: Text(
+                    '${_formatCount(widget.post.likesCount)} likes',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 20 / 15,
+                      letterSpacing: -0.15,
+                      fontWeight: FontWeight.w600,
+                      color: _onSurface,
                     ),
-                  );
-                },
-              ),
-              if (_showHeartAnimation)
-                ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: const Icon(
-                    Icons.favorite,
-                    color: Colors.white,
-                    size: 100,
                   ),
                 ),
-            ],
-          ),
-        ),
 
-        // Action Bar (Like, Comment, Share, Bookmark)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      widget.post.isLiked
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: widget.post.isLiked
-                          ? Colors.red
-                          : const Color(0xFF1F2937),
+                // Caption
+                if (widget.post.caption.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.375,
+                        fontWeight: FontWeight.w400,
+                        color: _onSurface,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: '${widget.post.username}  ',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            height: 20 / 15,
+                            letterSpacing: -0.15,
+                            fontWeight: FontWeight.w600,
+                            color: _onSurface,
+                          ),
+                        ),
+                        TextSpan(text: widget.post.caption),
+                      ],
                     ),
-                    onPressed: _onButtonLike,
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.chat_bubble_outline,
-                      color: Color(0xFF1F2937),
-                    ),
-                    onPressed: _openComments,
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.send_outlined,
-                      color: Color(0xFF1F2937),
-                    ),
-                    onPressed: () {},
                   ),
                 ],
-              ),
-              IconButton(
-                icon: Icon(
-                  widget.post.isBookmarked
-                      ? Icons.bookmark
-                      : Icons.bookmark_border,
-                  color: const Color(0xFF1F2937),
-                ),
-                onPressed: () {
-                  setState(() {
-                    widget.post.isBookmarked = !widget.post.isBookmarked;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
 
-        // Post Info (Likes, Caption, Time Ago)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: _openComments,
-                child: Text(
-                  '${widget.post.likesCount} likes • ${widget.post.commentsCount} comments',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-              ),
-              if (widget.post.caption.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
+                // Meta and Comments Link
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _openComments,
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    widget.post.commentsCount > 0
+                        ? 'View all ${widget.post.commentsCount} comments'
+                        : 'View comments',
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF1F2937),
+                      height: 18 / 13,
+                      fontWeight: FontWeight.w400,
+                      color: _secondary,
                     ),
-                    children: [
-                      TextSpan(
-                        text: '${widget.post.username} ',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(text: widget.post.caption),
-                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.post.timeAgo.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 14 / 11,
+                    letterSpacing: 0.55,
+                    fontWeight: FontWeight.w400,
+                    color: _secondary,
                   ),
                 ),
               ],
-              const SizedBox(height: 4),
-              Text(
-                widget.post.timeAgo,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF6B7280),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-      ],
+        ],
+      ),
     );
   }
 }
+

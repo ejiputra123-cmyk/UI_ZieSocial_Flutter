@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/core/constants.dart';
+import 'package:ziesocial/view/chat_room_view.dart';
 import 'package:ziesocial/view/edit_profile_view.dart';
 import 'package:ziesocial/viewmodel/login_viewmodel.dart';
 import 'package:ziesocial/viewmodel/post_viewmodel.dart';
@@ -152,57 +153,121 @@ class _ProfileViewState extends State<ProfileView> {
 
                   const Gap(16),
 
-                  // Tombol Aksi: Edit Profile (Akun Sendiri) ATAU Follow/Following (Akun Orang Lain)
+                  // Tombol Aksi: Edit Profile (Akun Sendiri) ATAU Follow & Message (Akun Orang Lain)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: isOtherUser
-                          ? ElevatedButton.icon(
-                              onPressed: profileVM.isFollowLoading
-                                  ? null
-                                  : () {
-                                      final myId = int.tryParse(
-                                        loginUser?.id ?? '',
+                    child: isOtherUser
+                        ? Row(
+                            children: [
+                              // Tombol Follow / Following
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: ElevatedButton.icon(
+                                    onPressed: profileVM.isFollowLoading
+                                        ? null
+                                        : () {
+                                            final myId = int.tryParse(
+                                              loginUser?.id ?? '',
+                                            );
+                                            final targetId = int.tryParse(
+                                              displayUser.id,
+                                            );
+                                            if (myId != null &&
+                                                targetId != null) {
+                                              _handleToggleFollow(
+                                                myId,
+                                                targetId,
+                                              );
+                                            }
+                                          },
+                                    icon: Icon(
+                                      displayUser.isFollowed
+                                          ? Icons.check_rounded
+                                          : Icons.person_add_alt_1_rounded,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      displayUser.isFollowed
+                                          ? 'Following'
+                                          : 'Follow',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: displayUser.isFollowed
+                                          ? const Color(0xFFF3F4F6)
+                                          : const Color(0xFF4F46E5),
+                                      foregroundColor: displayUser.isFollowed
+                                          ? const Color(0xFF1F2937)
+                                          : Colors.white,
+                                      elevation: 0,
+                                      side: displayUser.isFollowed
+                                          ? const BorderSide(
+                                              color: Color(0xFFD1D5DB),
+                                            )
+                                          : BorderSide.none,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Gap(8),
+                              // Tombol Message (DM)
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ChatRoomView(
+                                            targetUserId: int.parse(
+                                              displayUser.id,
+                                            ),
+                                            targetUserName: displayUser.name,
+                                            targetUserAvatar:
+                                                ApiConstants.getImageUrl(
+                                                  displayUser.avatar,
+                                                ),
+                                          ),
+                                        ),
                                       );
-                                      final targetId = int.tryParse(
-                                        displayUser.id,
-                                      );
-                                      if (myId != null && targetId != null) {
-                                        _handleToggleFollow(myId, targetId);
-                                      }
                                     },
-                              icon: Icon(
-                                displayUser.isFollowed
-                                    ? Icons.check_rounded
-                                    : Icons.person_add_alt_1_rounded,
-                                size: 18,
-                              ),
-                              label: Text(
-                                displayUser.isFollowed ? 'Following' : 'Follow',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                    icon: const Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 18,
+                                    ),
+                                    label: const Text(
+                                      'Message',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF4F46E5),
+                                      side: const BorderSide(
+                                        color: Color(0xFF4F46E5),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: displayUser.isFollowed
-                                    ? const Color(0xFFF3F4F6)
-                                    : const Color(0xFF4F46E5),
-                                foregroundColor: displayUser.isFollowed
-                                    ? const Color(0xFF1F2937)
-                                    : Colors.white,
-                                elevation: 0,
-                                side: displayUser.isFollowed
-                                    ? const BorderSide(color: Color(0xFFD1D5DB))
-                                    : BorderSide.none,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            )
-                          : OutlinedButton.icon(
+                            ],
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: OutlinedButton.icon(
                               onPressed: () async {
                                 await Navigator.push(
                                   context,
@@ -231,7 +296,7 @@ class _ProfileViewState extends State<ProfileView> {
                                 ),
                               ),
                             ),
-                    ),
+                          ),
                   ),
 
                   const Gap(16),
