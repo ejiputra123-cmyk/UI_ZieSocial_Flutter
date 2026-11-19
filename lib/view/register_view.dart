@@ -38,46 +38,65 @@ class _RegisterViewState extends State<RegisterView> {
   bool _isPasswordFocused = false;
   bool _isConfirmPasswordFocused = false;
 
-  // Design tokens konsisten dengan LoginView & HomeView
+  // Design System ZieSocial
   static const Color _surface = Color(0xFFFCF9F8);
-  static const Color _onSurface = Color(0xFF1C1B1B);
-  static const Color _secondary = Color(0xFF5E5D6C);
+  static const Color _surfaceContainerLow = Color(0xFFF6F3F2);
+  static const Color _surfaceContainer = Color(0xFFF0EDED);
   static const Color _primary = Color(0xFF4D3BCE);
   static const Color _primaryContainer = Color(0xFF6657E8);
   static const Color _primaryFixed = Color(0xFFE4DFFF);
   static const Color _onPrimary = Color(0xFFFFFFFF);
-  static const Color _surfaceContainerLow = Color(0xFFF6F3F2);
-  static const Color _surfaceContainer = Color(0xFFF0EDED);
+  static const Color _onSurface = Color(0xFF1C1B1B);
+  static const Color _secondary = Color(0xFF5E5D6C);
   static const Color _error = Color(0xFFBA1A1A);
   static const Color _success = Color(0xFF006245);
-
-  static const String _brandLogoUrl =
-      'https://lh3.googleusercontent.com/aida/ALJJyrAfMs2ItwwCkd5S8GKnTKuYjyXKj8uj6XczHo5Kkahl1P0R2pCUqhdIyBuBiUKT0MAjFiZVsByNRJTFtlf7FuouANoUWjcAeNwiF9hxaWgN-0B81jMz39JlOwWlxmNMUSmZsj1llNc0BrxSoFljE0s7zrcnmc9D9QNWoNVIcmcTMssBiMeN3cg27oQvhb4wKfEzKaWwoH-z6RCVc3_5Win7EN8-OpOoPS5z6Ld-Iy7wmg';
 
   @override
   void initState() {
     super.initState();
-    _nameFocusNode.addListener(() {
-      setState(() => _isNameFocused = _nameFocusNode.hasFocus);
-    });
-    _usernameFocusNode.addListener(() {
+    _nameFocusNode.addListener(_onNameFocusChanged);
+    _usernameFocusNode.addListener(_onUsernameFocusChanged);
+    _emailFocusNode.addListener(_onEmailFocusChanged);
+    _passwordFocusNode.addListener(_onPasswordFocusChanged);
+    _confirmPasswordFocusNode.addListener(_onConfirmPasswordFocusChanged);
+  }
+
+  void _onNameFocusChanged() {
+    if (mounted) setState(() => _isNameFocused = _nameFocusNode.hasFocus);
+  }
+
+  void _onUsernameFocusChanged() {
+    if (mounted) {
       setState(() => _isUsernameFocused = _usernameFocusNode.hasFocus);
-    });
-    _emailFocusNode.addListener(() {
-      setState(() => _isEmailFocused = _emailFocusNode.hasFocus);
-    });
-    _passwordFocusNode.addListener(() {
+    }
+  }
+
+  void _onEmailFocusChanged() {
+    if (mounted) setState(() => _isEmailFocused = _emailFocusNode.hasFocus);
+  }
+
+  void _onPasswordFocusChanged() {
+    if (mounted) {
       setState(() => _isPasswordFocused = _passwordFocusNode.hasFocus);
-    });
-    _confirmPasswordFocusNode.addListener(() {
+    }
+  }
+
+  void _onConfirmPasswordFocusChanged() {
+    if (mounted) {
       setState(
         () => _isConfirmPasswordFocused = _confirmPasswordFocusNode.hasFocus,
       );
-    });
+    }
   }
 
   @override
   void dispose() {
+    _nameFocusNode.removeListener(_onNameFocusChanged);
+    _usernameFocusNode.removeListener(_onUsernameFocusChanged);
+    _emailFocusNode.removeListener(_onEmailFocusChanged);
+    _passwordFocusNode.removeListener(_onPasswordFocusChanged);
+    _confirmPasswordFocusNode.removeListener(_onConfirmPasswordFocusChanged);
+
     _nameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
@@ -206,82 +225,6 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required bool isFocused,
-    required IconData prefixIcon,
-    required String hintText,
-    TextInputType? keyboardType,
-    TextInputAction? textInputAction,
-    List<String>? autofillHints,
-    bool obscureText = false,
-    Widget? suffix,
-    ValueChanged<String>? onSubmitted,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            height: 18 / 13,
-            fontWeight: FontWeight.w500,
-            color: _onSurface,
-          ),
-        ),
-        const Gap(4),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: isFocused ? _surfaceContainer : _surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(prefixIcon, size: 20, color: _secondary),
-              const Gap(12),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  keyboardType: keyboardType,
-                  textInputAction: textInputAction,
-                  autofillHints: autofillHints,
-                  obscureText: obscureText,
-                  onSubmitted: onSubmitted,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 21 / 14,
-                    fontWeight: FontWeight.w400,
-                    color: _onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    hintStyle: const TextStyle(
-                      fontSize: 14,
-                      height: 21 / 14,
-                      fontWeight: FontWeight.w400,
-                      color: _secondary,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-              if (suffix != null) ...[const Gap(8), suffix],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<RegisterViewModel>().isLoading;
@@ -292,395 +235,419 @@ class _RegisterViewState extends State<RegisterView> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
+                  minHeight: constraints.maxHeight,
+                ),
                 child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 12,
-                      bottom: 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Back Button
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GestureDetector(
-                            onTap: _navigateToLogin,
-                            behavior: HitTestBehavior.opaque,
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: _surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.arrow_back_rounded,
-                                size: 20,
-                                color: _onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Gap(8),
-
-                        // Branding Header
-                        Column(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Image.network(
-                                _brandLogoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: _primaryContainer,
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'z',
-                                      style: TextStyle(
-                                        color: _onPrimary,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w700,
+                            // 1. Top Navigation & Header (Rata Tengah)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Transform.translate(
+                                offset: const Offset(-10, 0),
+                                child: Semantics(
+                                  button: true,
+                                  label: 'Back to Sign in',
+                                  child: InkWell(
+                                    onTap: isLoading ? null : _navigateToLogin,
+                                    borderRadius: BorderRadius.circular(22),
+                                    child: const SizedBox(
+                                      width: 44,
+                                      height: 44,
+                                      child: Icon(
+                                        Icons.arrow_back_rounded,
+                                        size: 24,
+                                        color: _onSurface,
                                       ),
                                     ),
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
                             ),
-                            const Gap(8),
+                            const Gap(12),
+
                             const Text(
-                              'ziesocial',
+                              'Create account',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 24,
-                                height: 30 / 24,
-                                letterSpacing: -0.48,
+                                fontSize: 28,
+                                height: 1.2,
+                                letterSpacing: -0.5,
                                 fontWeight: FontWeight.w700,
                                 color: _onSurface,
                               ),
                             ),
-                            const Gap(4),
-                            const Text(
-                              'Your moments, your community.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 18 / 13,
-                                fontWeight: FontWeight.w500,
-                                color: _secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Gap(24),
-
-                        // Welcome Section
-                        const Text(
-                          'Create account',
-                          style: TextStyle(
-                            fontSize: 24,
-                            height: 30 / 24,
-                            letterSpacing: -0.48,
-                            fontWeight: FontWeight.w700,
-                            color: _onSurface,
-                          ),
-                        ),
-                        const Gap(4),
-                        const Text(
-                          'Join the community and start sharing your moments.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 21 / 14,
-                            fontWeight: FontWeight.w400,
-                            color: _secondary,
-                          ),
-                        ),
-                        const Gap(20),
-
-                        // Profile Photo Picker
-                        Center(
-                          child: Column(
-                            children: [
-                              GestureDetector(
-                                onTap: isLoading ? null : _pickAvatar,
-                                child: Stack(
-                                  children: [
-                                    Container(
-                                      width: 84,
-                                      height: 84,
-                                      decoration: BoxDecoration(
-                                        color: _surfaceContainerLow,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _selectedAvatar != null
-                                              ? _primary
-                                              : _primaryFixed,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: _selectedAvatar != null
-                                          ? Image.file(
-                                              File(_selectedAvatar!.path),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : const Icon(
-                                              Icons.add_a_photo_outlined,
-                                              size: 28,
-                                              color: _secondary,
-                                            ),
+                            const Gap(6),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                const Text(
+                                  'Already have an account? ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.4,
+                                    fontWeight: FontWeight.w400,
+                                    color: _secondary,
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: isLoading ? null : _navigateToLogin,
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 2,
+                                      horizontal: 2,
                                     ),
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
+                                    child: Text(
+                                      'Sign in',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        fontWeight: FontWeight.w600,
+                                        color: _primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const Gap(20),
+
+                            // 2. Compact Avatar Picker (Rata Tengah)
+                            Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Semantics(
+                                    button: true,
+                                    label: _selectedAvatar != null
+                                        ? 'Change profile photo'
+                                        : 'Add profile photo',
+                                    child: InkWell(
+                                      onTap: isLoading ? null : _pickAvatar,
+                                      customBorder: const CircleBorder(),
                                       child: Container(
-                                        width: 28,
-                                        height: 28,
+                                        width: 56,
+                                        height: 56,
                                         decoration: BoxDecoration(
-                                          color: _primaryContainer,
+                                          color: _surfaceContainerLow,
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                            color: _surface,
-                                            width: 2,
+                                            color: _selectedAvatar != null
+                                                ? _primary
+                                                : _primaryFixed,
+                                            width: 1.5,
                                           ),
                                         ),
-                                        alignment: Alignment.center,
-                                        child: Icon(
-                                          _selectedAvatar != null
-                                              ? Icons.edit
-                                              : Icons.add,
-                                          size: 14,
+                                        clipBehavior: Clip.antiAlias,
+                                        child: _selectedAvatar != null
+                                            ? Image.file(
+                                                File(_selectedAvatar!.path),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : const Icon(
+                                                Icons.add_a_photo_outlined,
+                                                size: 22,
+                                                color: _secondary,
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(14),
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Wrap(
+                                          spacing: 12,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            InkWell(
+                                              onTap: isLoading
+                                                  ? null
+                                                  : _pickAvatar,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 2,
+                                                    ),
+                                                child: Text(
+                                                  _selectedAvatar != null
+                                                      ? 'Change photo'
+                                                      : 'Add profile photo',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    height: 1.35,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: _onSurface,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            if (_selectedAvatar != null)
+                                              InkWell(
+                                                onTap: isLoading
+                                                    ? null
+                                                    : () => setState(
+                                                        () => _selectedAvatar =
+                                                            null,
+                                                      ),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: 2,
+                                                  ),
+                                                  child: Text(
+                                                    'Remove',
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      height: 1.35,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: _error,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const Gap(2),
+                                        const Text(
+                                          'Optional • JPG/PNG max 5MB',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            height: 1.35,
+                                            fontWeight: FontWeight.w400,
+                                            color: _secondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Gap(20),
+
+                            // 3. Form Input Section
+                            AutofillGroup(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _RegisterInputField(
+                                    controller: _nameController,
+                                    focusNode: _nameFocusNode,
+                                    isFocused: _isNameFocused,
+                                    prefixIcon: Icons.person_outline,
+                                    hintText: 'Full Name',
+                                    textInputAction: TextInputAction.next,
+                                    autofillHints: const [AutofillHints.name],
+                                  ),
+                                  const Gap(12),
+                                  _RegisterInputField(
+                                    controller: _usernameController,
+                                    focusNode: _usernameFocusNode,
+                                    isFocused: _isUsernameFocused,
+                                    prefixIcon: Icons.alternate_email,
+                                    hintText: 'Username',
+                                    textInputAction: TextInputAction.next,
+                                    autofillHints: const [
+                                      AutofillHints.username,
+                                    ],
+                                  ),
+                                  const Gap(12),
+                                  _RegisterInputField(
+                                    controller: _emailController,
+                                    focusNode: _emailFocusNode,
+                                    isFocused: _isEmailFocused,
+                                    prefixIcon: Icons.mail_outline,
+                                    hintText: 'Email Address',
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    autofillHints: const [AutofillHints.email],
+                                  ),
+                                  const Gap(12),
+                                  _RegisterInputField(
+                                    controller: _passwordController,
+                                    focusNode: _passwordFocusNode,
+                                    isFocused: _isPasswordFocused,
+                                    prefixIcon: Icons.lock_outline,
+                                    hintText: 'Password (min. 6 chars)',
+                                    obscureText: _obscurePassword,
+                                    textInputAction: TextInputAction.next,
+                                    autofillHints: const [
+                                      AutofillHints.newPassword,
+                                    ],
+                                    suffix: Semantics(
+                                      button: true,
+                                      label: _obscurePassword
+                                          ? 'Show password'
+                                          : 'Hide password',
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: SizedBox(
+                                          width: 44,
+                                          height: 44,
+                                          child: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            size: 20,
+                                            color: _secondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(12),
+                                  _RegisterInputField(
+                                    controller: _confirmPasswordController,
+                                    focusNode: _confirmPasswordFocusNode,
+                                    isFocused: _isConfirmPasswordFocused,
+                                    prefixIcon: Icons.lock_outline,
+                                    hintText: 'Confirm Password',
+                                    obscureText: _obscureConfirmPassword,
+                                    textInputAction: TextInputAction.done,
+                                    autofillHints: const [
+                                      AutofillHints.newPassword,
+                                    ],
+                                    onSubmitted: (_) {
+                                      if (!isLoading) _register();
+                                    },
+                                    suffix: Semantics(
+                                      button: true,
+                                      label: _obscureConfirmPassword
+                                          ? 'Show confirm password'
+                                          : 'Hide confirm password',
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _obscureConfirmPassword =
+                                                !_obscureConfirmPassword;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: SizedBox(
+                                          width: 44,
+                                          height: 44,
+                                          child: Icon(
+                                            _obscureConfirmPassword
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            size: 20,
+                                            color: _secondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Gap(24),
+
+                            // 4. Primary CTA Button (Pill)
+                            SizedBox(
+                              height: 52,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _primaryContainer,
+                                  foregroundColor: _onPrimary,
+                                  disabledBackgroundColor: _primaryContainer
+                                      .withValues(alpha: 0.7),
+                                  elevation: 0,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: _onPrimary,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Create account',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.3,
+                                          fontWeight: FontWeight.w600,
                                           color: _onPrimary,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Gap(8),
-                              GestureDetector(
-                                onTap: isLoading
-                                    ? null
-                                    : (_selectedAvatar != null
-                                          ? () => setState(
-                                              () => _selectedAvatar = null,
-                                            )
-                                          : _pickAvatar),
-                                child: Text(
-                                  _selectedAvatar != null
-                                      ? 'Remove photo'
-                                      : 'Add profile photo (optional)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: _selectedAvatar != null
-                                        ? _error
-                                        : _primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Gap(20),
-
-                        // Form Fields
-                        _buildInputField(
-                          label: 'Full name',
-                          controller: _nameController,
-                          focusNode: _nameFocusNode,
-                          isFocused: _isNameFocused,
-                          prefixIcon: Icons.person_outline,
-                          hintText: 'Enter your full name',
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                        ),
-                        const Gap(14),
-
-                        _buildInputField(
-                          label: 'Username',
-                          controller: _usernameController,
-                          focusNode: _usernameFocusNode,
-                          isFocused: _isUsernameFocused,
-                          prefixIcon: Icons.alternate_email,
-                          hintText: 'Choose a username',
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.username],
-                        ),
-                        const Gap(14),
-
-                        _buildInputField(
-                          label: 'Email address',
-                          controller: _emailController,
-                          focusNode: _emailFocusNode,
-                          isFocused: _isEmailFocused,
-                          prefixIcon: Icons.mail_outline,
-                          hintText: 'Enter your email',
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                        ),
-                        const Gap(14),
-
-                        _buildInputField(
-                          label: 'Password',
-                          controller: _passwordController,
-                          focusNode: _passwordFocusNode,
-                          isFocused: _isPasswordFocused,
-                          prefixIcon: Icons.lock_outline,
-                          hintText: 'Create a password (min. 6 chars)',
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.newPassword],
-                          suffix: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                            behavior: HitTestBehavior.opaque,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                size: 20,
-                                color: _secondary,
                               ),
                             ),
-                          ),
-                        ),
-                        const Gap(14),
 
-                        _buildInputField(
-                          label: 'Confirm password',
-                          controller: _confirmPasswordController,
-                          focusNode: _confirmPasswordFocusNode,
-                          isFocused: _isConfirmPasswordFocused,
-                          prefixIcon: Icons.lock_outline,
-                          hintText: 'Re-enter your password',
-                          obscureText: _obscureConfirmPassword,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.newPassword],
-                          onSubmitted: (_) {
-                            if (!isLoading) _register();
-                          },
-                          suffix: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
-                            behavior: HitTestBehavior.opaque,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                size: 20,
-                                color: _secondary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Gap(24),
-
-                        // Submit Primary Button
-                        SizedBox(
-                          height: 48,
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _register,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _primaryContainer,
-                              foregroundColor: _onPrimary,
-                              disabledBackgroundColor: _primaryContainer
-                                  .withValues(alpha: 0.7),
-                              elevation: 1,
-                              shadowColor: Colors.black.withValues(alpha: 0.1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: _onPrimary,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Create account',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      height: 22 / 16,
-                                      letterSpacing: -0.16,
-                                      fontWeight: FontWeight.w600,
-                                      color: _onPrimary,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const Gap(24),
-
-                        // Login Footer
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Already have an account? ',
+                            // 5. Legal Footer
+                            const Spacer(),
+                            const Gap(20),
+                            const Text.rich(
+                              TextSpan(
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  height: 21 / 14,
+                                  fontSize: 12,
+                                  height: 1.5,
                                   fontWeight: FontWeight.w400,
                                   color: _secondary,
                                 ),
-                              ),
-                              const Gap(4),
-                              GestureDetector(
-                                onTap: _navigateToLogin,
-                                child: const Text(
-                                  'Log in',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    height: 20 / 15,
-                                    letterSpacing: -0.15,
-                                    fontWeight: FontWeight.w600,
-                                    color: _primary,
+                                children: [
+                                  TextSpan(
+                                    text:
+                                        "By creating an account, you agree to ZieSocial's ",
                                   ),
-                                ),
+                                  TextSpan(
+                                    text: 'Terms of Service',
+                                    style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: _secondary,
+                                      fontWeight: FontWeight.w500,
+                                      color: _onSurface,
+                                    ),
+                                  ),
+                                  TextSpan(text: ' and '),
+                                  TextSpan(
+                                    text: 'Privacy Policy.',
+                                    style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: _secondary,
+                                      fontWeight: FontWeight.w500,
+                                      color: _onSurface,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -692,4 +659,97 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 }
+
+class _RegisterInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isFocused;
+  final IconData prefixIcon;
+  final String hintText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final List<String>? autofillHints;
+  final bool obscureText;
+  final Widget? suffix;
+  final ValueChanged<String>? onSubmitted;
+
+  const _RegisterInputField({
+    required this.controller,
+    required this.focusNode,
+    required this.isFocused,
+    required this.prefixIcon,
+    required this.hintText,
+    this.keyboardType,
+    this.textInputAction,
+    this.autofillHints,
+    this.obscureText = false,
+    this.suffix,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      height: 52,
+      padding: EdgeInsets.only(left: 16, right: suffix != null ? 4 : 16),
+      decoration: BoxDecoration(
+        color: isFocused
+            ? _RegisterViewState._surfaceContainer
+            : _RegisterViewState._surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isFocused
+              ? _RegisterViewState._primary.withValues(alpha: 0.35)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              prefixIcon,
+              size: 20,
+              color: _RegisterViewState._secondary,
+            ),
+          ),
+          const Gap(12),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: keyboardType,
+              textInputAction: textInputAction,
+              autofillHints: autofillHints,
+              obscureText: obscureText,
+              onSubmitted: onSubmitted,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                fontWeight: FontWeight.w400,
+                color: _RegisterViewState._onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  fontWeight: FontWeight.w400,
+                  color: _RegisterViewState._secondary,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          if (suffix != null) suffix!,
+        ],
+      ),
+    );
+  }
+}
+
 

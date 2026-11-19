@@ -8,6 +8,7 @@ class ApiConstants {
 
   static String get login => '$apiBaseUrl/auth/login.php';
   static String get register => '$apiBaseUrl/auth/register.php';
+  static String get updateFcmToken => '$apiBaseUrl/auth/update_fcm_token.php';
   static String get createPost => '$apiBaseUrl/posts/create.php';
   static String get updatePost => '$apiBaseUrl/posts/update.php';
   static String get readPosts => '$apiBaseUrl/posts/read.php';

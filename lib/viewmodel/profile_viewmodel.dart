@@ -21,6 +21,8 @@ class ProfileViewModel extends ChangeNotifier {
   // State daftar akun pada tab Search
   List<UserModel> _discoveredUsers = [];
   bool _isLoadingUsers = false;
+  String? _usersErrorMessage;
+  int _searchRequestId = 0;
 
   bool _isLoading = false;
   bool _isUpdating = false;
@@ -35,11 +37,29 @@ class ProfileViewModel extends ChangeNotifier {
 
   List<UserModel> get discoveredUsers => _discoveredUsers;
   bool get isLoadingUsers => _isLoadingUsers;
+  String? get usersErrorMessage => _usersErrorMessage;
 
   bool get isLoading => _isLoading;
   bool get isUpdating => _isUpdating;
   bool get isFollowLoading => _isFollowLoading;
   String? get errorMessage => _errorMessage;
+
+  // Reset seluruh state profil & pencarian (misal saat logout)
+  void reset() {
+    _searchRequestId++;
+    _profileUser = null;
+    _userPosts = [];
+    _viewedUser = null;
+    _viewedUserPosts = [];
+    _discoveredUsers = [];
+    _isLoadingUsers = false;
+    _usersErrorMessage = null;
+    _isLoading = false;
+    _isUpdating = false;
+    _isFollowLoading = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
 
   // Memuat profil sendiri
   Future<void> fetchProfile(int userId) async {
@@ -197,8 +217,9 @@ class ProfileViewModel extends ChangeNotifier {
     required int currentUserId,
     String search = '',
   }) async {
+    final requestId = ++_searchRequestId;
     _isLoadingUsers = true;
-    _errorMessage = null;
+    _usersErrorMessage = null;
     notifyListeners();
 
     try {
@@ -207,13 +228,20 @@ class ProfileViewModel extends ChangeNotifier {
         '${ApiConstants.readUsers}?current_user_id=$currentUserId&search=$encodedSearch',
       );
 
+      // Abaikan respons lama jika sudah ada request pencarian yang lebih baru
+      if (requestId != _searchRequestId) return;
+
       final List<dynamic> data = response['data'] ?? [];
       _discoveredUsers = data.map((item) => UserModel.fromJson(item)).toList();
     } catch (e) {
-      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      if (requestId != _searchRequestId) return;
+      _usersErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      _discoveredUsers = [];
     } finally {
-      _isLoadingUsers = false;
-      notifyListeners();
+      if (requestId == _searchRequestId) {
+        _isLoadingUsers = false;
+        notifyListeners();
+      }
     }
   }
 

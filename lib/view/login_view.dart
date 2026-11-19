@@ -22,34 +22,42 @@ class _LoginViewState extends State<LoginView> {
   bool _isEmailFocused = false;
   bool _isPasswordFocused = false;
 
-  // Design tokens sesuai konfigurasi Tailwind pada HTML
+  // Design System ZieSocial
   static const Color _surface = Color(0xFFFCF9F8);
-  static const Color _onSurface = Color(0xFF1C1B1B);
-  static const Color _secondary = Color(0xFF5E5D6C);
+  static const Color _surfaceContainerLowest = Color(0xFFFFFFFF);
+  static const Color _surfaceContainerLow = Color(0xFFF6F3F2);
+  static const Color _surfaceContainer = Color(0xFFF0EDED);
+  static const Color _surfaceVariant = Color(0xFFE5E2E1);
   static const Color _primary = Color(0xFF4D3BCE);
   static const Color _primaryContainer = Color(0xFF6657E8);
   static const Color _onPrimary = Color(0xFFFFFFFF);
-  static const Color _surfaceContainerLow = Color(0xFFF6F3F2);
-  static const Color _surfaceContainer = Color(0xFFF0EDED);
-  static const Color _surfaceContainerLowest = Color(0xFFFFFFFF);
-  static const Color _surfaceVariant = Color(0xFFE5E2E1);
-
-  static const String _brandLogoUrl =
-      'https://lh3.googleusercontent.com/aida/ALJJyrAfMs2ItwwCkd5S8GKnTKuYjyXKj8uj6XczHo5Kkahl1P0R2pCUqhdIyBuBiUKT0MAjFiZVsByNRJTFtlf7FuouANoUWjcAeNwiF9hxaWgN-0B81jMz39JlOwWlxmNMUSmZsj1llNc0BrxSoFljE0s7zrcnmc9D9QNWoNVIcmcTMssBiMeN3cg27oQvhb4wKfEzKaWwoH-z6RCVc3_5Win7EN8-OpOoPS5z6Ld-Iy7wmg';
+  static const Color _onSurface = Color(0xFF1C1B1B);
+  static const Color _secondary = Color(0xFF5E5D6C);
+  static const Color _error = Color(0xFFBA1A1A);
 
   @override
   void initState() {
     super.initState();
-    _emailFocusNode.addListener(() {
+    _emailFocusNode.addListener(_onEmailFocusChanged);
+    _passwordFocusNode.addListener(_onPasswordFocusChanged);
+  }
+
+  void _onEmailFocusChanged() {
+    if (mounted) {
       setState(() => _isEmailFocused = _emailFocusNode.hasFocus);
-    });
-    _passwordFocusNode.addListener(() {
+    }
+  }
+
+  void _onPasswordFocusChanged() {
+    if (mounted) {
       setState(() => _isPasswordFocused = _passwordFocusNode.hasFocus);
-    });
+    }
   }
 
   @override
   void dispose() {
+    _emailFocusNode.removeListener(_onEmailFocusChanged);
+    _passwordFocusNode.removeListener(_onPasswordFocusChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _emailFocusNode.dispose();
@@ -57,16 +65,23 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: _error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email dan password wajib diisi.'),
-        ),
-      );
+      _showSnackBar('Email dan password wajib diisi.');
       return;
     }
 
@@ -80,19 +95,19 @@ class _LoginViewState extends State<LoginView> {
     if (success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const HomeView(),
-        ),
+        MaterialPageRoute(builder: (context) => const HomeView()),
       );
     } else {
       final errorMessage = context.read<LoginViewModel>().errorMessage;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage ?? 'Login Gagal.'),
-        ),
-      );
+      _showSnackBar(errorMessage ?? 'Login Gagal.');
     }
+  }
+
+  void _navigateToRegister() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const RegisterView()),
+    );
   }
 
   @override
@@ -105,412 +120,264 @@ class _LoginViewState extends State<LoginView> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
+                  minHeight: constraints.maxHeight,
+                ),
                 child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      bottom: 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Branding Header
-                        const Gap(24),
-                        Column(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Image.network(
-                                _brandLogoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: _primaryContainer,
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'z',
-                                      style: TextStyle(
-                                        color: _onPrimary,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const Gap(8),
+                            // 1. Header Section (Rata Tengah)
                             const Text(
-                              'ziesocial',
+                              'Sign in',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 24,
-                                height: 30 / 24,
-                                letterSpacing: -0.48,
+                                fontSize: 28,
+                                height: 1.2,
+                                letterSpacing: -0.5,
                                 fontWeight: FontWeight.w700,
                                 color: _onSurface,
                               ),
                             ),
-                            const Gap(4),
-                            const Text(
-                              'Your moments, your community.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 18 / 13,
-                                fontWeight: FontWeight.w500,
-                                color: _secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Gap(32),
-
-                        // Welcome Section
-                        const Text(
-                          'Welcome back',
-                          style: TextStyle(
-                            fontSize: 24,
-                            height: 30 / 24,
-                            letterSpacing: -0.48,
-                            fontWeight: FontWeight.w700,
-                            color: _onSurface,
-                          ),
-                        ),
-                        const Gap(4),
-                        const Text(
-                          'Sign in to continue sharing your moments.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 21 / 14,
-                            fontWeight: FontWeight.w400,
-                            color: _secondary,
-                          ),
-                        ),
-                        const Gap(24),
-
-                        // Form Container
-                        // Email Input Field
-                        const Text(
-                          'Email address',
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 18 / 13,
-                            fontWeight: FontWeight.w500,
-                            color: _onSurface,
-                          ),
-                        ),
-                        const Gap(4),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: _isEmailFocused
-                                ? _surfaceContainer
-                                : _surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.mail_outline,
-                                size: 20,
-                                color: _secondary,
-                              ),
-                              const Gap(12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _emailController,
-                                  focusNode: _emailFocusNode,
-                                  keyboardType: TextInputType.emailAddress,
-                                  autofillHints: const [AutofillHints.email],
-                                  style: const TextStyle(
+                            const Gap(6),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                const Text(
+                                  'New user? ',
+                                  style: TextStyle(
                                     fontSize: 14,
-                                    height: 21 / 14,
+                                    height: 1.4,
                                     fontWeight: FontWeight.w400,
-                                    color: _onSurface,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Enter your email',
-                                    hintStyle: TextStyle(
-                                      fontSize: 14,
-                                      height: 21 / 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: _secondary,
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Gap(16),
-
-                        // Password Input Field
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 18 / 13,
-                            fontWeight: FontWeight.w500,
-                            color: _onSurface,
-                          ),
-                        ),
-                        const Gap(4),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: _isPasswordFocused
-                                ? _surfaceContainer
-                                : _surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.lock_outline,
-                                size: 20,
-                                color: _secondary,
-                              ),
-                              const Gap(12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _passwordController,
-                                  focusNode: _passwordFocusNode,
-                                  obscureText: _obscurePassword,
-                                  autofillHints: const [AutofillHints.password],
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    height: 21 / 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: _onSurface,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Enter your password',
-                                    hintStyle: TextStyle(
-                                      fontSize: 14,
-                                      height: 21 / 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: _secondary,
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                ),
-                              ),
-                              const Gap(8),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                                behavior: HitTestBehavior.opaque,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    size: 20,
                                     color: _secondary,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Gap(20),
-
-                        // Forgot Password Link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () {},
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                fontSize: 12,
-                                height: 16 / 12,
-                                letterSpacing: 0.12,
-                                fontWeight: FontWeight.w500,
-                                color: _primary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Gap(24),
-
-                        // Submit Primary Button
-                        SizedBox(
-                          height: 48,
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _primaryContainer,
-                              foregroundColor: _onPrimary,
-                              disabledBackgroundColor:
-                                  _primaryContainer.withValues(alpha: 0.7),
-                              elevation: 1,
-                              shadowColor: Colors.black.withValues(alpha: 0.1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: _onPrimary,
+                                InkWell(
+                                  onTap: isLoading ? null : _navigateToRegister,
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 2,
+                                      horizontal: 2,
                                     ),
-                                  )
-                                : const Text(
-                                    'Log in',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      height: 22 / 16,
-                                      letterSpacing: -0.16,
-                                      fontWeight: FontWeight.w600,
-                                      color: _onPrimary,
+                                    child: Text(
+                                      'Create an account',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        fontWeight: FontWeight.w600,
+                                        color: _primary,
+                                      ),
                                     ),
                                   ),
-                          ),
-                        ),
-                        const Gap(24),
-
-                        // Social Divider
-                        Row(
-                          children: [
-                            const Expanded(
-                              child: Divider(
-                                color: _surfaceVariant,
-                                thickness: 1,
-                                height: 1,
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'or continue with',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  height: 14 / 11,
-                                  letterSpacing: 0.22,
-                                  fontWeight: FontWeight.w400,
-                                  color: _secondary,
                                 ),
-                              ),
+                              ],
                             ),
-                            const Expanded(
-                              child: Divider(
-                                color: _surfaceVariant,
-                                thickness: 1,
-                                height: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Gap(24),
 
-                        // Social Login Actions
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _SocialLoginButton(
+                            const Gap(28),
+
+                            // 2. Form Input Section
+                            AutofillGroup(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _LoginInputField(
+                                    controller: _emailController,
+                                    focusNode: _emailFocusNode,
+                                    isFocused: _isEmailFocused,
+                                    prefixIcon: Icons.mail_outline,
+                                    hintText: 'Email Address',
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    autofillHints: const [AutofillHints.email],
+                                  ),
+                                  const Gap(14),
+                                  _LoginInputField(
+                                    controller: _passwordController,
+                                    focusNode: _passwordFocusNode,
+                                    isFocused: _isPasswordFocused,
+                                    prefixIcon: Icons.lock_outline,
+                                    hintText: 'Password',
+                                    obscureText: _obscurePassword,
+                                    textInputAction: TextInputAction.done,
+                                    autofillHints: const [
+                                      AutofillHints.password,
+                                    ],
+                                    onSubmitted: (_) {
+                                      if (!isLoading) _login();
+                                    },
+                                    suffix: Semantics(
+                                      button: true,
+                                      label: _obscurePassword
+                                          ? 'Show password'
+                                          : 'Hide password',
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: SizedBox(
+                                          width: 44,
+                                          height: 44,
+                                          child: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            size: 20,
+                                            color: _secondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Gap(12),
+
+                            // Forgot Password Link (Rata Tengah)
+                            Align(
+                              alignment: Alignment.center,
+                              child: InkWell(
                                 onTap: () {},
-                                icon: const Icon(
-                                  Icons.apple,
-                                  size: 20,
-                                  color: _onSurface,
+                                borderRadius: BorderRadius.circular(6),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 4,
+                                    horizontal: 6,
+                                  ),
+                                  child: Text(
+                                    'Forgot password?',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w500,
+                                      color: _onSurface,
+                                    ),
+                                  ),
                                 ),
-                                label: 'Apple',
                               ),
+                            ),
+
+                            const Gap(28),
+
+                            // 3. Primary CTA Button (Pill)
+                            SizedBox(
+                              height: 52,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _primaryContainer,
+                                  foregroundColor: _onPrimary,
+                                  disabledBackgroundColor: _primaryContainer
+                                      .withValues(alpha: 0.7),
+                                  elevation: 0,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: _onPrimary,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Login',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.3,
+                                          fontWeight: FontWeight.w600,
+                                          color: _onPrimary,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const Gap(24),
+
+                            // 4. Divider ("or")
+                            const Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    color: _surfaceVariant,
+                                    thickness: 1,
+                                    height: 1,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 14),
+                                  child: Text(
+                                    'or',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w400,
+                                      color: _secondary,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: _surfaceVariant,
+                                    thickness: 1,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const Gap(24),
+
+                            // 5. Social Login Buttons (Stacked Full-Width Pills)
+                            _SocialAuthButton(
+                              onTap: isLoading ? null : () {},
+                              icon: const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CustomPaint(
+                                  painter: _GoogleLogoPainter(),
+                                ),
+                              ),
+                              label: 'Continue with Google',
                             ),
                             const Gap(12),
-                            Expanded(
-                              child: _SocialLoginButton(
-                                onTap: () {},
-                                icon: const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CustomPaint(
-                                    painter: _GoogleLogoPainter(),
-                                  ),
-                                ),
-                                label: 'Google',
+                            _SocialAuthButton(
+                              onTap: isLoading ? null : () {},
+                              icon: const Icon(
+                                Icons.apple,
+                                size: 22,
+                                color: _onSurface,
                               ),
+                              label: 'Continue with Apple',
+                            ),
+
+                            // 6. Legal Footer
+                            const Spacer(),
+                            const Gap(24),
+                            const _AuthLegalFooter(
+                              prefixText:
+                                  "By signing in with an account, you agree to ZieSocial's ",
                             ),
                           ],
                         ),
-                        const Gap(32),
-
-                        // Registration Footer (mt-auto pt-space-md)
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  height: 21 / 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: _secondary,
-                                ),
-                              ),
-                              const Gap(4),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RegisterView(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Create account',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    height: 20 / 15,
-                                    letterSpacing: -0.15,
-                                    fontWeight: FontWeight.w600,
-                                    color: _primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -523,12 +390,104 @@ class _LoginViewState extends State<LoginView> {
   }
 }
 
-class _SocialLoginButton extends StatelessWidget {
-  final VoidCallback onTap;
+class _LoginInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isFocused;
+  final IconData prefixIcon;
+  final String hintText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final List<String>? autofillHints;
+  final bool obscureText;
+  final Widget? suffix;
+  final ValueChanged<String>? onSubmitted;
+
+  const _LoginInputField({
+    required this.controller,
+    required this.focusNode,
+    required this.isFocused,
+    required this.prefixIcon,
+    required this.hintText,
+    this.keyboardType,
+    this.textInputAction,
+    this.autofillHints,
+    this.obscureText = false,
+    this.suffix,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      height: 52,
+      padding: EdgeInsets.only(left: 16, right: suffix != null ? 4 : 16),
+      decoration: BoxDecoration(
+        color: isFocused
+            ? _LoginViewState._surfaceContainer
+            : _LoginViewState._surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isFocused
+              ? _LoginViewState._primary.withValues(alpha: 0.35)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              prefixIcon,
+              size: 20,
+              color: _LoginViewState._secondary,
+            ),
+          ),
+          const Gap(12),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: keyboardType,
+              textInputAction: textInputAction,
+              autofillHints: autofillHints,
+              obscureText: obscureText,
+              onSubmitted: onSubmitted,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                fontWeight: FontWeight.w400,
+                color: _LoginViewState._onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  fontWeight: FontWeight.w400,
+                  color: _LoginViewState._secondary,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          if (suffix != null) suffix!,
+        ],
+      ),
+    );
+  }
+}
+
+class _SocialAuthButton extends StatelessWidget {
+  final VoidCallback? onTap;
   final Widget icon;
   final String label;
 
-  const _SocialLoginButton({
+  const _SocialAuthButton({
     required this.onTap,
     required this.icon,
     required this.label,
@@ -536,45 +495,90 @@ class _SocialLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: _LoginViewState._surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+    return SizedBox(
+      height: 50,
+      width: double.infinity,
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        color: _LoginViewState._surfaceContainerLowest,
+        shape: const StadiumBorder(
+          side: BorderSide(color: _LoginViewState._surfaceVariant, width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
           hoverColor: _LoginViewState._surfaceContainerLow,
           splashColor: _LoginViewState._surfaceContainerLow,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              icon,
-              const Gap(8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 18 / 14,
-                  fontWeight: FontWeight.w500,
-                  color: _LoginViewState._onSurface,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ExcludeSemantics(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Center(child: icon),
+                  ),
                 ),
-              ),
-            ],
+                const Gap(10),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    fontWeight: FontWeight.w500,
+                    color: _LoginViewState._onSurface,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AuthLegalFooter extends StatelessWidget {
+  final String prefixText;
+
+  const _AuthLegalFooter({required this.prefixText});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        style: const TextStyle(
+          fontSize: 12,
+          height: 1.5,
+          fontWeight: FontWeight.w400,
+          color: _LoginViewState._secondary,
+        ),
+        children: [
+          TextSpan(text: prefixText),
+          const TextSpan(
+            text: 'Terms of Service',
+            style: TextStyle(
+              decoration: TextDecoration.underline,
+              decorationColor: _LoginViewState._secondary,
+              fontWeight: FontWeight.w500,
+              color: _LoginViewState._onSurface,
+            ),
+          ),
+          const TextSpan(text: ' and '),
+          const TextSpan(
+            text: 'Privacy Policy.',
+            style: TextStyle(
+              decoration: TextDecoration.underline,
+              decorationColor: _LoginViewState._secondary,
+              fontWeight: FontWeight.w500,
+              color: _LoginViewState._onSurface,
+            ),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }
@@ -653,3 +657,4 @@ class _GoogleLogoPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

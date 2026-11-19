@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ziesocial/core/constants.dart';
+import 'package:ziesocial/core/notifications_service.dart';
 import 'package:ziesocial/view/create_post_view.dart';
 import 'package:ziesocial/view/inbox_view.dart';
 import 'package:ziesocial/view/login_view.dart';
@@ -55,6 +56,9 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _loadPosts() async {
     final user = context.read<LoginViewModel>().user;
     final userId = user != null ? int.tryParse(user.id) : null;
+    if (userId != null) {
+      NotificationService.instance.syncTokenToServer(userId);
+    }
     await context.read<PostViewModel>().fetchPosts(currentUserId: userId);
     if (userId != null && mounted) {
       await context.read<ProfileViewModel>().fetchProfile(userId);
@@ -62,7 +66,11 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _logout(BuildContext context) {
+    final user = context.read<LoginViewModel>().user;
+    final userId = user != null ? int.tryParse(user.id) : null;
+    NotificationService.instance.clearTokenFromServer(userId);
     context.read<ChatViewModel>().disconnectPusher();
+    context.read<ProfileViewModel>().reset();
     context.read<LoginViewModel>().logout();
 
     Navigator.pushAndRemoveUntil(
